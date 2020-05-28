@@ -23,17 +23,29 @@
 //Se definen los types de UINT8 Y UINT16
 typedef unsigned char UINT8;
 typedef unsigned short UINT16;
-
+typedef unsigned int UINT32;
 #define NULL 0
 
 
+
+UINT8 IN_B(UINT16 port)
+{
+  UINT8 ret;
+  asm volatile("inb %1, %0" :"=a"(ret) :"Nd"(port) );
+  return ret;
+}
+UINT8 OUT_B(UINT16 port, UINT8 value)
+{
+	asm volatile("outb %1, %0" : : "dN"(port), "a"(value));
+        return 0;
+}
+
 int DIGIT_ASCII_CODES[10] = {0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39};
 
-
-unsigned int X_INDEX;
 //Tamano del buffer
 #define BUFSIZE 2200
 
+//=====================================================
 
 UINT16* TERMINAL_BUFFER;
 //16 Colores de VGA
@@ -46,7 +58,7 @@ enum vga_color {
     VGA_COLOR_MAGENTA,
     VGA_COLOR_BROWN,
     VGA_COLOR_LIGHT_GREY,
-    VGA_COLOR_DARK_GREY,
+    VGA_COLOR_DARK_GREY,   /*Para cambiar el fondo: A partir de dark_grey cambia a modo parpadeo, y vuelve a los colores de arriba. Ej: LIGHT_RED contando a partir de DARK_GREY seria el numero 4, por lo que en pantalla se veria el color RED (4) parpadeando*/
     VGA_COLOR_LIGHT_BLUE,
     VGA_COLOR_LIGHT_GREEN,
     VGA_COLOR_LIGHT_CYAN,
@@ -56,43 +68,91 @@ enum vga_color {
     VGA_COLOR_WHITE,
 };
 
+
 //Eje Y
-unsigned int Y_INDEX = 1;
+UINT32 Y_INDEX = 1;
+//Eje X
+UINT32 X_INDEX;
 UINT16 MEM_SIZE = 0;
 
+//Declaro el color del fondo y el de los caracteres
+UINT8 c_fondo = VGA_COLOR_WHITE, c_superior = VGA_COLOR_BLACK;
 
-static UINT16 VGA_DefaultEntry(unsigned char to_print) {
-	return (UINT16) to_print | (UINT16)VGA_COLOR_WHITE << 8; //Se devuelve el char en pantalla con color blanco
+/*
+16 Bits en elementos de buffer para video (AX)
+--===================================--
+
+8 Bits en AL :
+  8 bits : Caracter (En ASCII)
+---------------------------------------
+8 Bits en AH : 
+  higher 4 Bits - Color de fondo
+  lower 4 Bits - Color superior
+
+*/
+
+
+static UINT16 VGA_DefaultEntry(unsigned char ch) {
+  UINT16 ax = 0;
+  UINT8 ah = 0, al = 0;
+
+  ah = c_fondo;
+  ah <<= 4;
+  ah |= c_superior;
+  ax = ah;
+  ax <<= 8;
+  al = ch;
+  ax |= al;
+
+  return ax;
 }
 
-static UINT16 VGA_ColoredEntry(unsigned char to_print, UINT8 color) {
-	return (UINT16) to_print | (UINT16)color << 8; //Se devuelve el char en pantalla con el color vga que se entregue
+static UINT16 VGA_ColoredEntry(unsigned char ch, UINT8 colorF, UINT8 colorS) {
+  UINT16 ax = 0;
+  UINT8 ah = 0, al = 0;
+
+  ah = colorF;
+  ah <<= 4;
+  ah |= colorS;
+  ax = ah;
+  ax <<= 8;
+  al = ch;
+  ax |= al;
+
+  return ax;
 }
 
+void disable_cursor( ) 
+{ 
+	OUT_B( 0x3D4 ,  0x0A ) ; 
+	OUT_B( 0x3D5 ,  0x20 ) ; 
+}
+void disable_blink( )
+{
+        IN_B(0x03DA);
+        OUT_B(0x03C0, 0x30);
+        IN_B(0x3C1);
+        OUT_B(0x3C0, 0xF7);
+}
+
+
+//=====================================================
 
 void ClearVGA(UINT16 **buffer)
 {
   for(int i=0;i<BUFSIZE;i++){
-    (*buffer)[i] = '\0';  //Agrega un caracter vacio en cada espacio
+    (*buffer)[i] = VGA_DefaultEntry('\0');  //Agrega un caracter vacio en cada espacio
   }
-  Y_INDEX = 1; //Regresa los ejes a 1 y 0
+  Y_INDEX = 1; //Regresa los ejes a 0
   X_INDEX = 0;
 }
 
 
 void InitTerminal()
 {
-  TERMINAL_BUFFER = (UINT16*) VGA_ADDRESS; //Declara el buffer de "terminal" en la direccion del vga, esto permite imprimir los caracteres
+  TERMINAL_BUFFER = (UINT16*) VGA_ADDRESS; //Declara el buffer de "terminal" para la posicion de vga
   ClearVGA(&TERMINAL_BUFFER); //Se borra la pantalla
 }
-
-
-UINT8 IN_B(UINT16 port)
-{
-  UINT8 ret;
-  asm volatile("inb %1, %0" :"=a"(ret) :"Nd"(port) );
-  return ret;
-}
-
+//=====================================================
 
 #endif

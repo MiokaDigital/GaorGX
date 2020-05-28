@@ -9,7 +9,6 @@ int strlen(const char* str)
   return length;
 }
 
-
 void strcat(char *str_1, char *str_2)
 {
   int index_1 = strlen(str_1);
@@ -134,33 +133,33 @@ void printInt(int num)
   printString(str_num);
 }
 
-void printColoredString(char *str, UINT8 color)
+void printColoredString(char *str, UINT8 colorF, UINT8 colorS)
 {
   int index = 0;
   while(str[index]){
-    TERMINAL_BUFFER[X_INDEX] = VGA_ColoredEntry(str[index], color);
+    TERMINAL_BUFFER[X_INDEX] = VGA_ColoredEntry(str[index], colorF, colorS);
     index++;
     X_INDEX++;
   }
 }
 
 
-void printColoredCharN(char ch, int n, UINT8 color)
+void printColoredCharN(char ch, int n, UINT8 colorF, UINT8 colorS)
 {
   int i = 0;
   while(i <= n){
-    TERMINAL_BUFFER[X_INDEX] = VGA_ColoredEntry(ch, color);
+    TERMINAL_BUFFER[X_INDEX] = VGA_ColoredEntry(ch, colorF, colorS);
     i++;
     X_INDEX++;
   }
 }
 
 
-void printColored_WCharN(UINT16 ch, int n, UINT8 color)
+void printColored_WCharN(UINT16 ch, int n, UINT8 colorF, UINT8 colorS)
 {
   int i = 0;
   while(i <= n){
-    TERMINAL_BUFFER[X_INDEX] = VGA_ColoredEntry(ch, color);
+    TERMINAL_BUFFER[X_INDEX] = VGA_ColoredEntry(ch, colorF, colorS);
     i++;
     X_INDEX++;
   }

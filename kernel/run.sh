@@ -7,7 +7,7 @@ gcc -m32 -c kernel.c -o kernel.o -std=gnu99 -ffreestanding -O2 -Wall -Wextra
 #Linkear los objetos de kernel y de boot
 ld -m elf_i386 -T linker.ld kernel.o boot.o -o GaorgOS.bin -nostdlib
 
-#Check para ver si GaorgOS.bin es x86 o no
+#Definir GaorgOS.bin como kernel
 grub-file --is-x86-multiboot GaorgOS.bin
 
 #Crear imagen iso y directorio de boot
